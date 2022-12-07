@@ -1,24 +1,17 @@
 # random dot motion kinematogram
 # timo flesch, 2019
-
-
 # import matplotlib.pyplot as plt
 # from array2gif import write_gif
 
 import rdktools.rdk_params as params
-from rdktools.rdk_experiment import set_trials, TrialSequence
-
-
+from rdktools.rdk_experiment import Experiment
+import numpy as np
 
 
 def main():
-    trials = set_trials(n_reps=params.DOT_REPETITIONS,
-                        angles=params.DOT_ANGLES)
-    trial_seq = TrialSequence()
-    for ii, thisAngle in enumerate(trials):
-        frames = trial_seq.run(thisAngle)
-
-    quit()
+    exp = Experiment()
+    exp.run()
+    print(f"Avg Error : {np.mean(exp.results[:, 1])}")
 
 
 if __name__ == "__main__":
