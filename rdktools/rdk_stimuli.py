@@ -188,7 +188,7 @@ class RDK(object):
         self.duration = self.duration_init
         self.hide()
 
-        return allframes, angle
+        return allframes, angle, ii
 
     def update(self):
         # updates position of dots
