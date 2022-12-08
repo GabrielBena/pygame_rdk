@@ -26,7 +26,7 @@ class Params:
     )  # max num of simultaneously displayed dots
     DOT_SIZE: int = 3  # size in pixels
     DOT_SPEED: int = 4  # speed in pixels per frame
-    DOT_ANGLES: int = None
+    DOT_ANGLES: None = None
     N_TRIALS_PER_BATCH: int = 5
     N_BATCH: int = 5
     # : int DOT_ANGLES = list(np.arange(-180, 180, 10))  # motion directions
@@ -36,8 +36,11 @@ class Params:
     # DOT_COHERENCE.append(1 - 2 * DOT_COHERENCE[0])
     # SUBSET_RATIO = DOT_COHERENCE[0]  # ratio of dots moving temporally coherently
 
-    DOT_COHERENCE: tuple = ((0.1, 0.5), (0.5, 0.9))  # coherences or range of coherences
-    SUBSET_RATIO: float = (0.01, 0.3)  # ratio or range of ratio
+    # DOT_COHERENCE: tuple = ((0.1, 0.5), (0.5, 0.9))  # coherences or range of coherences
+    # SUBSET_RATIO: float = (0.01, 0.3)  # ratio or range of ratio
+
+    DOT_COHERENCE: tuple = ((0.1, 0.2, 0.3, 0.4, 0.5), (0.5, 0.6, 0.7, 0.8, 0.9))
+    SUBSET_RATIO: tuple = (0.01, 0.05, 0.1, 0.2, 0.3)
 
     # aperture parameters
     APERTURE_WIDTH: int = 4  # line width in pixels
@@ -51,5 +54,5 @@ class Params:
     COL_WHITE: tuple = (255, 255, 255)
     DOT_COLOR: tuple = COL_WHITE
     WINDOW_COLOUR: tuple = COL_BLACK
-    APERTURE_COLOR: int = COL_WHITE
+    APERTURE_COLOR: tuple = COL_WHITE
     FIX_COLOR: tuple = COL_WHITE
