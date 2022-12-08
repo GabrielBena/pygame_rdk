@@ -18,11 +18,7 @@ suitable for simulations etc.
 
 ``cd .. ``
 
-``git clone git@github.com:GabrielBena/custom_heatmap.git ``
-
-``cd custom_heatmap ``
-
-``pip install -e . ``
+``pip install git+git@github.com:GabrielBena/custom_heatmap.git ``
 
 ``cd ../pygame_rdk``
 
