@@ -26,6 +26,12 @@ suitable for simulations etc.
 
 ``cd ../pygame_rdk``
 
+Then download ptext.py and put it in your source directory (/home/USER/anaconda3/envs/RDK_test/bin/python3.10/site-packages).
+
+To install from command line:
+
+`` curl https://raw.githubusercontent.com/cosmologicon/pygame-text/master/ptext.py > my-source-directory/ptext.py ``
+
 
 ### Examples
 The easiest way to get started is to call the rdk script and play around with different parameters
