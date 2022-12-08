@@ -8,6 +8,7 @@ import random
 import numpy as np
 from math import cos, sin, atan2, radians, degrees
 import matplotlib.pyplot as plt
+import time
 
 # from array2gif import write_gif
 
@@ -86,7 +87,7 @@ class Fixation(object):
             ii += 1
             self.f_duration -= 1
         self.f_duration = self.f_duration_init
-        self.hide()
+        # self.hide()
         return allframes
 
     def wait(self):
