@@ -10,7 +10,7 @@ suitable for simulations etc.
 
 ``cd pygame_rdk ``
 
-``conda env create -f RDK_env.yml ``
+``conda env create -f RDK.yml ``
 
 ``conda activate RDK ``
 
@@ -32,6 +32,9 @@ Then download ptext.py and put it in your source directory (``/home/USER/anacond
 To install from command line:
 
 `` curl https://raw.githubusercontent.com/cosmologicon/pygame-text/master/ptext.py > my-source-directory/ptext.py ``
+
+## Run Experiment 
+run experiment.ipynb !
 
 
 ### Examples
