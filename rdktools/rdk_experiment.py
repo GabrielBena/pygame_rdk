@@ -6,20 +6,25 @@ from pygame.locals import *
 import pygame_gui
 import ptext
 
-from datetime import datetime
 
+from datetime import datetime
 import random
 import numpy as np
 import pandas as pd
 
-from rdktools.rdk_stimuli import RDK, Fixation, BlankScreen, ResultPrompt
 from PIL import Image
 import os, shutil
 from pathlib import Path
 import dataclasses
+from dacite import from_dict
 import pyaml
-
+import yaml
+import matplotlib.pyplot
 from copy import deepcopy
+
+from rdktools.rdk_stimuli import RDK, Fixation, BlankScreen, ResultPrompt
+from rdktools.rdk_params import Params
+from community.utils.heatmap import compute_and_plot_heatmap, compute_and_plot_colormesh
 
 
 def other_angle(angle):
@@ -75,7 +80,7 @@ class TrialSequence(object):
         frames_fix = self.fix.show()
         self.rdk.new_sample(angles)
         frames_rdk, chosen_angle, decision_time = self.rdk.show()
-        frames_iti = self.iti.show()
+        frames_iti = self.fix.show()  # self.iti.show()
 
         if chosen_angle is None:
             chosen_angle = self.result_screen.show()
@@ -88,12 +93,20 @@ class TrialSequence(object):
 
 
 class Experiment(object):
-    def __init__(self, params, randomize=True, save_gif=True, save_data=True) -> None:
+    def __init__(
+        self, params, randomize=True, save_gif=True, save_data=True, path=None
+    ) -> None:
+
+        if params is None:
+            assert path is not None
+            self.load_exp(path)
+        else:
+            self.params = params
 
         pygame.init()
 
         # params.NAME = input("Name : ")
-        self.params = params
+
         self.save_gif = save_gif
         self.save_data = save_data
         self.randomize = randomize
@@ -105,11 +118,11 @@ class Experiment(object):
 
         now = datetime.now()
         date_time = now.strftime("%d-%m-%Y-%H-%M-%S")
-        self.save_path = f"experiments/{params.NAME}/{date_time}"
+        self.save_path = f"experiments/{self.params.NAME}/{date_time}"
         path = Path(self.save_path)
         path.mkdir(exist_ok=True, parents=True)
 
-        params_dict = dataclasses.asdict(params)
+        params_dict = dataclasses.asdict(self.params)
         with open(f"{self.save_path}/params.yml", "w") as out_file:
             pyaml.dump(params_dict, out_file)
 
@@ -123,17 +136,19 @@ class Experiment(object):
         self.coherences = []
         self.subset_ratio = []
 
-        win_width = params.WINDOW_WIDTH
-        win_height = params.WINDOW_HEIGHT
+        win_width = self.params.WINDOW_WIDTH
+        win_height = self.params.WINDOW_HEIGHT
         self.centre = [win_height // 2, win_width // 2]
 
     def text_prompt(self, center, display, batch=None):
 
         # create a text surface object,
         # on which text is drawn on it.
-        txt = "RDK : Get Ready"
+
         if batch is not None:
-            txt += f"\n Batch {batch} / {self.params.N_BATCH}"
+            txt = f"RDK : \n Batch {batch} / {self.params.N_BATCH}"
+        else:
+            txt = "RDK : Get Ready \n Choose a direction at any point during trial \n by clicking with the mouse"
 
         run = True
         # infinite loop
@@ -167,13 +182,20 @@ class Experiment(object):
         for c in self.params.DOT_COHERENCE:
             r = np.random.rand()
             if isinstance(c, tuple):
-                coherences.append((c[1] - c[0]) * r + c[0])
+                if len(c) == 2:
+                    coherences.append((c[1] - c[0]) * r + c[0])
+                else:
+                    coherences.append(np.random.choice(c))
             else:
                 coherences.append(r * c)
 
         s = self.params.SUBSET_RATIO
+        r = np.random.rand()
         if isinstance(s, tuple):
-            subset_ratio = (s[1] - s[0]) * r + s[0]
+            if len(s) == 2:
+                subset_ratio = (s[1] - s[0]) * r + s[0]
+            else:
+                subset_ratio = np.random.choice(s)
         else:
             subset_ratio = r * s
 
@@ -226,17 +248,19 @@ class Experiment(object):
             (self.params.WINDOW_WIDTH, self.params.WINDOW_HEIGHT)
         )
 
+        self.text_prompt(self.centre, self.display, None)
         for batch in range(self.params.N_BATCH):
 
             params = deepcopy(self.params)
             if self.randomize:
                 coherences, subset_ratio = self.get_random_params()
+                # print(coherences, subset_ratio)
 
             params.DOT_COHERENCE = coherences
             params.SUBSET_RATIO = subset_ratio
 
             try:
-                self.text_prompt(self.centre, self.display, batch)
+                self.text_prompt(self.centre, self.display, batch + 1)
                 self.run_batch(params, batch)
             except KeyboardInterrupt:
                 break
@@ -256,8 +280,8 @@ class Experiment(object):
             "subset_coherence": [],
             "subset_ratio": [],
             "chosen_angle": [],
-            "absolute error_global": [],
-            "absolute error_subset": [],
+            "absolute_error_global": [],
+            "absolute_error_subset": [],
             "decision_time": [],
         }
         for angles, (chosen_angle, error1, error2, d_time), (c1, c2), s_r in zip(
@@ -267,8 +291,8 @@ class Experiment(object):
             result_dict["global_direction"].append(angles[0])
             result_dict["subset_direction"].append(angles[1])
             result_dict["chosen_angle"].append(chosen_angle)
-            result_dict["absolute error_global"].append(error1)
-            result_dict["absolute error_subset"].append(error2)
+            result_dict["absolute_error_global"].append(error1)
+            result_dict["absolute_error_subset"].append(error2)
             result_dict["decision_time"].append(d_time)
             result_dict["global_coherence"].append(c1)
             result_dict["subset_coherence"].append(c2)
@@ -284,3 +308,51 @@ class Experiment(object):
 
         self.results_pd = results
         results.to_csv(f"{self.save_path}/results.csv")
+
+    def plot_results(
+        self,
+        type="scipy",
+        metric="absolute_error_subset",
+        resolution=100,
+        smoothness=3,
+        use_ratio=False,
+    ):
+
+        values = self.results_pd[["subset_coherence", "subset_ratio", metric]].values.T
+
+        y_label = "subset_proportion"
+
+        if use_ratio:
+            coherence_ratio = (
+                self.results_pd["subset_coherence"].values
+                / self.results_pd["global_coherence"].values
+            )
+            values = (coherence_ratio, *values[1:])
+
+            x_label = "coherence_ratio"
+        else:
+            x_label = "subset_coherence"
+
+        if type == "scipy":
+            *_, (fig, ax), cbar = compute_and_plot_colormesh(
+                values, resolution=resolution
+            )
+        else:
+            *_, (fig, ax), cbar = compute_and_plot_heatmap(
+                values, resolution=resolution, smoothness=smoothness, random=False
+            )
+
+        ax.set_xlabel(x_label)
+        ax.set_ylabel(y_label)
+        cbar.set_label(metric)
+
+        # fig.suptitle(f"{metric} as function of {x_label} and {y_label}")
+
+    def load_exp(self, path):
+        with open(path + "/params.yml", "r") as file:
+            params = yaml.safe_load(file)
+        params = {n: tuple(c) if type(c) is list else c for n, c in params.items()}
+        self.params = from_dict(data_class=Params, data=params)
+
+        self.results_pd = pd.read_csv(path + "/results.csv")
+        self.resuls = self.results_pd.values
