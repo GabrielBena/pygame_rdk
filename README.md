@@ -16,9 +16,7 @@ suitable for simulations etc.
 
 ``pip install -e. ``
 
-``cd .. ``
-
-``pip install git+git@github.com:GabrielBena/custom_heatmap.git ``
+``pip install git+https://github.com/GabrielBena/custom_heatmap.git``
 
 Then download ptext.py and put it in your source directory (``/home/USER/anaconda3/envs/RDK/lib/python3.10/site-packages/
 ``).
