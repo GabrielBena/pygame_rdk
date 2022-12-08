@@ -79,6 +79,7 @@ dependencies:
   - mkl_fft=1.3.1=py310hd6ae3a3_0
   - mkl_random=1.2.2=py310h00e6091_0
   - munkres=1.1.4=py_0
+  - mypy_extensions=0.4.3=py310h06a4308_0
   - ncurses=6.3=h5eee18b_3
   - nspr=4.33=h295c915_0
   - nss=3.74=h0370c37_0
@@ -128,10 +129,12 @@ dependencies:
     - argon2-cffi-bindings==21.2.0
     - attrs==22.1.0
     - beautifulsoup4==4.11.1
+    - black==22.6.0
     - bottleneck==1.3.5
     - brotlipy==0.7.0
     - certifi==2022.9.24
     - cffi==1.15.1
+    - click==8.0.4
     - cryptography==38.0.1
     - dacite==1.6.0
     - debugpy==1.5.1
@@ -158,6 +161,7 @@ dependencies:
     - mkl-fft==1.3.1
     - mkl-random==1.2.2
     - mkl-service==2.4.0
+    - mypy-extensions==0.4.3
     - nbclassic==0.4.8
     - nbclient==0.5.13
     - nbconvert==6.5.4
@@ -168,8 +172,10 @@ dependencies:
     - numexpr==2.8.4
     - numpy==1.23.4
     - pandas==1.5.1
+    - pathspec==0.9.0
     - pillow==9.2.0
     - pip==22.2.2
+    - platformdirs==2.5.2
     - ply==3.11
     - prometheus-client==0.14.1
     - psutil==5.9.0
@@ -201,4 +207,3 @@ dependencies:
     - webencodings==0.5.1
     - websocket-client==0.58.0
     - widgetsnbextension==3.5.2
-prefix: /home/gbena/anaconda3/envs/RDK
