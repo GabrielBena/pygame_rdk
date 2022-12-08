@@ -24,7 +24,7 @@ from copy import deepcopy
 
 from rdktools.rdk_stimuli import RDK, Fixation, BlankScreen, ResultPrompt
 from rdktools.rdk_params import Params
-from community.utils.heatmap import compute_and_plot_heatmap, compute_and_plot_colormesh
+from heatmap.plot import compute_and_plot_heatmap, compute_and_plot_colormesh
 
 
 def other_angle(angle):
@@ -94,14 +94,42 @@ class TrialSequence(object):
 
 class Experiment(object):
     def __init__(
-        self, params, randomize=True, save_gif=True, save_data=True, path=None
+        self,
+        params,
+        path=None,
+        randomize=True,
+        save_gif=True,
+        save_data=True,
     ) -> None:
 
         if params is None:
             assert path is not None
             self.load_exp(path)
+
         else:
             self.params = params
+
+            try:
+                os.mkdir("experiments")
+            except FileExistsError:
+                pass
+            if path is None:
+                now = datetime.now()
+                date_time = now.strftime("%d-%m-%Y-%H-%M-%S")
+                self.save_path = f"experiments/{self.params.NAME}/{date_time}"
+                path = Path(self.save_path)
+                path.mkdir(exist_ok=True, parents=True)
+            else:
+                self.save_path = path
+
+            params_dict = dataclasses.asdict(self.params)
+            with open(f"{self.save_path}/params.yml", "w") as out_file:
+                pyaml.dump(params_dict, out_file)
+
+            if save_gif:
+                os.mkdir(self.save_path + "/gifs")
+            if save_data:
+                os.mkdir(self.save_path + "/data")
 
         pygame.init()
 
@@ -110,26 +138,6 @@ class Experiment(object):
         self.save_gif = save_gif
         self.save_data = save_data
         self.randomize = randomize
-
-        try:
-            os.mkdir("experiments")
-        except FileExistsError:
-            pass
-
-        now = datetime.now()
-        date_time = now.strftime("%d-%m-%Y-%H-%M-%S")
-        self.save_path = f"experiments/{self.params.NAME}/{date_time}"
-        path = Path(self.save_path)
-        path.mkdir(exist_ok=True, parents=True)
-
-        params_dict = dataclasses.asdict(self.params)
-        with open(f"{self.save_path}/params.yml", "w") as out_file:
-            pyaml.dump(params_dict, out_file)
-
-        if save_gif:
-            os.mkdir(self.save_path + "/gifs")
-        if save_data:
-            os.mkdir(self.save_path + "/data")
 
         self.angles = []
         self.results = []
@@ -180,23 +188,24 @@ class Experiment(object):
 
         coherences = []
         for c in self.params.DOT_COHERENCE:
-            r = np.random.rand()
-            if isinstance(c, tuple):
+            try:
+                iter(c)
                 if len(c) == 2:
                     coherences.append((c[1] - c[0]) * r + c[0])
                 else:
                     coherences.append(np.random.choice(c))
-            else:
+            except TypeError:
                 coherences.append(r * c)
 
         s = self.params.SUBSET_RATIO
         r = np.random.rand()
-        if isinstance(s, tuple):
+        try:
+            iter(s)
             if len(s) == 2:
                 subset_ratio = (s[1] - s[0]) * r + s[0]
             else:
                 subset_ratio = np.random.choice(s)
-        else:
+        except TypeError:
             subset_ratio = r * s
 
         return coherences, subset_ratio
@@ -262,6 +271,7 @@ class Experiment(object):
             try:
                 self.text_prompt(self.centre, self.display, batch + 1)
                 self.run_batch(params, batch)
+                self.save_results()
             except KeyboardInterrupt:
                 break
 
@@ -301,13 +311,18 @@ class Experiment(object):
         results = pd.DataFrame.from_dict(result_dict)
 
         try:
-            existing_results = pd.read_csv(f"{self.save_path}/results.csv")
+            existing_results = pd.read_csv(f"{self.save_path}/results.csv", index_col=0)
             results = pd.concat([existing_results, results])
         except FileNotFoundError:
             pass
 
         self.results_pd = results
         results.to_csv(f"{self.save_path}/results.csv")
+
+        self.angles = []
+        self.results = []
+        self.coherences = []
+        self.subset_ratio = []
 
     def plot_results(
         self,
@@ -355,4 +370,5 @@ class Experiment(object):
         self.params = from_dict(data_class=Params, data=params)
 
         self.results_pd = pd.read_csv(path + "/results.csv")
-        self.resuls = self.results_pd.values
+        self.results = self.results_pd.values
+        self.save_path = path
