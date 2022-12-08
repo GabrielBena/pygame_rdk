@@ -6,16 +6,25 @@ suitable for simulations etc.
 
 ## Install : 
 
-git clone git@github.com:GabrielBena/pygame_rdk.git
-cd pygame_rdk
-conda env create -f RDK_env.yml
-conda activate RDK
-pip install -e.
-cd ..
-git clone git@github.com:GabrielBena/custom_heatmap.git
-cd custom_heatmap
-pip install -e .
-cd ../pygame_rdk
+``git clone git@github.com:GabrielBena/pygame_rdk.git ``
+
+``cd pygame_rdk ``
+
+``conda env create -f RDK_env.yml ``
+
+``conda activate RDK ``
+
+``pip install -e. ``
+
+``cd .. ``
+
+``git clone git@github.com:GabrielBena/custom_heatmap.git ``
+
+``cd custom_heatmap ``
+
+``pip install -e . ``
+
+``cd ../pygame_rdk``
 
 
 ### Examples
