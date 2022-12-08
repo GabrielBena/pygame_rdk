@@ -26,7 +26,7 @@ suitable for simulations etc.
 
 ``cd ../pygame_rdk``
 
-Then download ptext.py and put it in your source directory (/home/USER/anaconda3/envs/RDK_test/bin/python3.10/site-packages).
+Then download ptext.py and put it in your source directory (``/home/USER/anaconda3/envs/RDK_test/bin/python3.10/site-packages``).
 
 To install from command line:
 
