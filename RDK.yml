@@ -22,6 +22,7 @@ dependencies:
   - defusedxml=0.7.1=pyhd3eb1b0_0
   - executing=0.8.3=pyhd3eb1b0_0
   - expat=2.4.9=h6a678d5_0
+  - fftw=3.3.9=h27cfd23_1
   - flit-core=3.6.0=pyhd3eb1b0_0
   - fontconfig=2.14.1=hef1e5e3_0
   - fonttools=4.25.0=pyhd3eb1b0_0
@@ -56,6 +57,8 @@ dependencies:
   - libevent=2.1.12=h8f2d780_0
   - libffi=3.4.2=h6a678d5_6
   - libgcc-ng=11.2.0=h1234567_1
+  - libgfortran-ng=11.2.0=h00389a5_1
+  - libgfortran5=11.2.0=h1234567_1
   - libgomp=11.2.0=h1234567_1
   - libllvm10=10.0.1=hbcb73fb_5
   - libpng=1.6.37=hbc83047_0
@@ -92,6 +95,7 @@ dependencies:
   - prompt_toolkit=3.0.20=hd3eb1b0_0
   - ptyprocess=0.7.0=pyhd3eb1b0_2
   - pure_eval=0.2.2=pyhd3eb1b0_0
+  - pyaml=20.4.0=pyhd3eb1b0_0
   - pycparser=2.21=pyhd3eb1b0_0
   - pygments=2.11.2=pyhd3eb1b0_0
   - pyopenssl=22.0.0=pyhd3eb1b0_0
@@ -129,6 +133,7 @@ dependencies:
     - certifi==2022.9.24
     - cffi==1.15.1
     - cryptography==38.0.1
+    - dacite==1.6.0
     - debugpy==1.5.1
     - entrypoints==0.4
     - fastjsonschema==2.16.2
@@ -181,6 +186,8 @@ dependencies:
     - qtconsole==5.3.2
     - qtpy==2.2.0
     - requests==2.28.1
+    - scipy==1.9.3
+    - seaborn==0.12.1
     - setuptools==65.5.0
     - sip==6.6.2
     - sniffio==1.2.0
