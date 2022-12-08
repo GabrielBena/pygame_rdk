@@ -4,6 +4,20 @@ The RDK is fully customisable, i.e. you can change its colour, size, dot coheren
 Each frame is written to a numpy array and returned by the RDK object, which makes this implementation
 suitable for simulations etc.  
 
+## Install : 
+
+git clone git@github.com:GabrielBena/pygame_rdk.git
+cd pygame_rdk
+conda env create -f RDK_env.yml
+conda activate RDK
+pip install -e.
+cd ..
+git clone git@github.com:GabrielBena/custom_heatmap.git
+cd custom_heatmap
+pip install -e .
+cd ../pygame_rdk
+
+
 ### Examples
 The easiest way to get started is to call the rdk script and play around with different parameters
 
