@@ -22,9 +22,13 @@ suitable for simulations etc.
 
 ## Run Experiment 
 Experiment with random parameters : 
+
   -experiment.ipynb
+  
 Plot polar repartitions of angles, adjust parameters then run experiments : 
+
   -rdk_histograms.ipynb
+  
 
 
 ### Examples
