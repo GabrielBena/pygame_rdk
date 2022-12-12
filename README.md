@@ -21,7 +21,10 @@ suitable for simulations etc.
 `` pip install git+https://github.com/GabrielBena/pygame-text.git ``
 
 ## Run Experiment 
-run experiment.ipynb !
+Experiment with random parameters : 
+  -experiment.ipynb
+Plot polar repartitions of angles, adjust parameters then run experiments : 
+  -rdk_histograms.ipynb
 
 
 ### Examples
