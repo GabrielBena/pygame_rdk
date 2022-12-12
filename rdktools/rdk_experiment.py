@@ -23,7 +23,7 @@ import matplotlib.pyplot
 from copy import deepcopy
 
 from rdktools.rdk_stimuli import RDK, Fixation, BlankScreen, ResultPrompt
-from rdktools.rdk_params import Params
+from rdktools.rdk_params import Params, get_random_params
 from heatmap.plot import compute_and_plot_heatmap, compute_and_plot_colormesh
 
 
@@ -82,6 +82,11 @@ class TrialSequence(object):
         frames_rdk, chosen_angle, decision_time = self.rdk.show()
         frames_iti = self.fix.show()  # self.iti.show()
 
+        for f in [frames_rdk, frames_iti]:
+            if isinstance(f, str):
+                if f == "exit":
+                    return "exit", 0, 0
+
         if chosen_angle is None:
             chosen_angle = self.result_screen.show()
 
@@ -133,7 +138,7 @@ class Experiment(object):
 
         pygame.init()
 
-        # params.NAME = input("Name : ")
+        # self.params.NAME = input("Name : ")
 
         self.save_gif = save_gif
         self.save_data = save_data
@@ -184,32 +189,6 @@ class Experiment(object):
                 # Draws the surface object to the screen.
                 pygame.display.update()
 
-    def get_random_params(self):
-
-        coherences = []
-        for c in self.params.DOT_COHERENCE:
-            try:
-                iter(c)
-                if len(c) == 2:
-                    coherences.append((c[1] - c[0]) * r + c[0])
-                else:
-                    coherences.append(np.random.choice(c))
-            except TypeError:
-                coherences.append(r * c)
-
-        s = self.params.SUBSET_RATIO
-        r = np.random.rand()
-        try:
-            iter(s)
-            if len(s) == 2:
-                subset_ratio = (s[1] - s[0]) * r + s[0]
-            else:
-                subset_ratio = np.random.choice(s)
-        except TypeError:
-            subset_ratio = r * s
-
-        return coherences, subset_ratio
-
     def run_batch(self, params=None, batch_idx=0):
         if params is None:
             params = self.params
@@ -225,6 +204,10 @@ class Experiment(object):
         for ii, angles in enumerate(self.trials):
 
             frames, chosen_angle, decison_time = self.trial_seq.run(angles)
+            if isinstance(frames, str):
+                if frames == "exit":
+                    return "exit"
+
             self.results.append([chosen_angle])
             self.angles.append(angles)
             for angle in angles:
@@ -262,16 +245,18 @@ class Experiment(object):
 
             params = deepcopy(self.params)
             if self.randomize:
-                coherences, subset_ratio = self.get_random_params()
+                coherences, subset_ratio = get_random_params(params)
                 # print(coherences, subset_ratio)
-
-            params.DOT_COHERENCE = coherences
-            params.SUBSET_RATIO = subset_ratio
+                params.DOT_COHERENCE = coherences
+                params.SUBSET_RATIO = subset_ratio
 
             try:
                 self.text_prompt(self.centre, self.display, batch + 1)
-                self.run_batch(params, batch)
+                r = self.run_batch(params, batch)
+                if r == "exit":
+                    raise KeyboardInterrupt
                 self.save_results()
+
             except KeyboardInterrupt:
                 break
 

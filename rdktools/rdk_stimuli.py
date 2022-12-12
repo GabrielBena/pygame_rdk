@@ -73,7 +73,7 @@ class Fixation(object):
 
     def show(self):
         pygame.display.flip()
-        allframes = np.zeros((self.f_duration, self.win_width, self.win_height))
+        allframes = []  # np.zeros((self.f_duration, self.win_width, self.win_height))
         ii = 0
         while self.f_duration > 0:
             event = pygame.event.get()
@@ -83,11 +83,12 @@ class Fixation(object):
             frame = self.collect_frame()
             frame = frame.astype("float32")
             frame *= 255.0 / frame.max()
-            allframes[ii, :, :] = frame
+            allframes.append(frame)
             ii += 1
             self.f_duration -= 1
         self.f_duration = self.f_duration_init
         # self.hide()
+        allframes = np.stack(allframes)
         return allframes
 
     def wait(self):
@@ -151,6 +152,7 @@ class RDK(object):
         self.motiondirs = motiondirs
 
         self.params = params
+        self.dot_motiondirs = []
 
         self.dots = pygame.sprite.Group()
         self.dots = self.sample_dots(self.max_radius, self.ndots)
@@ -163,7 +165,7 @@ class RDK(object):
             dot.draw()
 
     def show(self):
-        allframes = np.zeros((self.duration, self.win_width, self.win_height))
+        allframes = []  # np.zeros((self.duration, self.win_width, self.win_height))
         ii = 0
         angle = None
         run = True
@@ -173,6 +175,9 @@ class RDK(object):
                 if event.type == pygame.QUIT or event.type == pygame.MOUSEBUTTONDOWN:
                     run = False
                     angle, *_ = get_mouse_angle(self.centre)
+                elif event.type == KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        return "exit", 0, 0
 
             self.clock.tick(self.tick_rate)
             self.display.fill(self.win_colour)
@@ -182,23 +187,27 @@ class RDK(object):
             frame = self.collect_frame()
             frame = frame.astype("float32")
             frame *= 255.0 / frame.max()
-            allframes[ii, :, :] = frame
+            allframes.append(frame)
             ii += 1
             self.duration -= 1
             self.update()
         self.duration = self.duration_init
+        allframes = np.stack(allframes)
         self.hide()
 
         return allframes, angle, ii
 
     def update(self):
         # updates position of dots
-        rand = random.random()
-        for dot in self.dots:
+        self.dot_motiondirs = []
+        self.rand = random.random()
+        for i, dot in enumerate(self.dots):
             if dot.in_subset:
-                dot.move(rand)
+                dot.move(self.rand)
             else:
                 dot.move()
+
+            self.dot_motiondirs.append(dot.motiondir)
 
     def hide(self):
         self.display.fill(self.win_colour)
@@ -216,17 +225,18 @@ class RDK(object):
         dots = pygame.sprite.Group()
         for ii in range(ndots):
             in_subset = random.random() < self.subset_ratio
-            dots.add(
-                RandDot(
-                    self.display,
-                    self.params,
-                    self.centre,
-                    radius=radii[ii],
-                    motiondir=self.motiondirs[int(in_subset)],
-                    dot_coherence=self.coherences[int(in_subset)],
-                    in_subset=in_subset,
-                )
+            dot = RandDot(
+                self.display,
+                self.params,
+                self.centre,
+                radius=radii[ii],
+                motiondir=self.motiondirs[int(in_subset)],
+                dot_coherence=self.coherences[int(in_subset)],
+                in_subset=in_subset,
+                diffusion_scale=self.params.DIFFUSION_SCALE,
             )
+            dots.add(dot)
+            self.dot_motiondirs.append(dot.motiondir)
 
         return dots
 
@@ -263,7 +273,7 @@ class BlankScreen(object):
 
     def show(self):
         self.display.fill(self.win_colour)
-        allframes = np.zeros((self.duration, self.win_width, self.win_height))
+        allframes = []
         ii = 0
         while self.duration > 0:
             event = pygame.event.get()
@@ -272,10 +282,11 @@ class BlankScreen(object):
             frame = self.collect_frame()
             frame = frame.astype("float32")
             frame *= 255.0 / frame.max()
-            allframes[ii, :, :] = frame
+            allframes.append(frame)
             ii += 1
             self.duration -= 1
         self.duration = self.duration_init
+        allframes = np.stack(allframes)
         return allframes
 
     def collect_frame(self):
@@ -298,6 +309,7 @@ class RandDot(pygame.sprite.Sprite):
         dot_coherence,
         motiondir=180,
         in_subset=False,
+        diffusion_scale=False,
     ):
         super(RandDot, self).__init__()
 
@@ -308,6 +320,11 @@ class RandDot(pygame.sprite.Sprite):
 
         self.dot_size = dot_size
         self.dot_colour = dot_colour
+        # self.dot_colour = (
+        #    params.COL_BLUE
+        #    if in_subset
+        #    else params.COL_RED  # tuple(np.random.randint(255) for _ in range(3))
+        # )
         self.surf = pygame.Surface((self.dot_size, self.dot_size))
         self.surf.fill((self.dot_colour))
         self.centre = centre
@@ -323,6 +340,7 @@ class RandDot(pygame.sprite.Sprite):
             center=(self.x_0 + self.centre[0], self.y_0 + self.centre[1])
         )
         self.display = display
+        self.diffusion_scale = diffusion_scale
 
         self.set_moves()
 
@@ -332,7 +350,13 @@ class RandDot(pygame.sprite.Sprite):
             rand = random.random()
 
         if rand < self.coherence:
-            self.motiondir = self.fixed_motiondir
+
+            if not self.in_subset:
+                self.motiondir = (
+                    np.random.normal(self.fixed_motiondir, self.diffusion_scale) % 360
+                )
+            else:
+                self.motiondir = self.fixed_motiondir
         else:
             self.motiondir = random.randint(0, 360)
 
@@ -376,6 +400,9 @@ class ResultPrompt(object):
             for event in pygame.event.get():
                 if event.type == pygame.QUIT or event.type == pygame.MOUSEBUTTONDOWN:
                     run = False
+                elif event.type == KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        return "exit", 0, 0
 
             points, angle = self.rotate_triangle(self.center, 10)
 

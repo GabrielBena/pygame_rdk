@@ -8,7 +8,7 @@ class Params:
     NAME: str = "gabriel"
 
     # window
-    WINDOW_WIDTH: int = 500
+    WINDOW_WIDTH: int = 300
     WINDOW_HEIGHT: int = WINDOW_WIDTH
     APERTURE_RADIUS: int = WINDOW_HEIGHT // 2
     WINDOW_NAME: str = "Random Dot Kinematogram"
@@ -42,6 +42,8 @@ class Params:
     DOT_COHERENCE: tuple = ((0.1, 0.2, 0.3, 0.4, 0.5), (0.5, 0.6, 0.7, 0.8, 0.9))
     SUBSET_RATIO: tuple = (0.01, 0.05, 0.1, 0.2, 0.3)
 
+    DIFFUSED_DIRECTION: bool = False
+
     # aperture parameters
     APERTURE_WIDTH: int = 4  # line width in pixels
 
@@ -52,7 +54,37 @@ class Params:
     # colors
     COL_BLACK: tuple = (0, 0, 0)
     COL_WHITE: tuple = (255, 255, 255)
+    COL_BLUE: tuple = (30, 144, 255)
+    COL_RED: tuple = (178, 34, 34)
     DOT_COLOR: tuple = COL_WHITE
     WINDOW_COLOUR: tuple = COL_BLACK
     APERTURE_COLOR: tuple = COL_WHITE
     FIX_COLOR: tuple = COL_WHITE
+
+
+def get_random_params(params):
+
+    coherences = []
+    for c in params.DOT_COHERENCE:
+        r = np.random.rand()
+        try:
+            iter(c)
+            if len(c) == 2:
+                coherences.append((c[1] - c[0]) * r + c[0])
+            else:
+                coherences.append(np.random.choice(c))
+        except TypeError:
+            coherences.append(r * c)
+
+    s = params.SUBSET_RATIO
+    r = np.random.rand()
+    try:
+        iter(s)
+        if len(s) == 2:
+            subset_ratio = (s[1] - s[0]) * r + s[0]
+        else:
+            subset_ratio = np.random.choice(s)
+    except TypeError:
+        subset_ratio = r * s
+
+    return coherences, subset_ratio
