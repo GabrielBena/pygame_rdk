@@ -6,7 +6,7 @@ suitable for simulations etc.
 
 ## Install : 
 
-``git clone git@github.com:GabrielBena/pygame_rdk.git ``
+``git clone https://github.com/GabrielBena/pygame_rdk``
 
 ``cd pygame_rdk ``
 
