@@ -43,7 +43,7 @@ class Params:
     SUBSET_RATIO: tuple = (0.01, 0.05, 0.1, 0.2, 0.3)
 
     # Diffusion angle parameter
-    DIFFUSED_SCALE: int = 0
+    DIFFUSION_SCALE: int = 0
     DIFFUSE_SUBSET: bool = False
 
     # aperture parameters
