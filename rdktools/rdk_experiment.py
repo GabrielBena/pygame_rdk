@@ -35,23 +35,38 @@ def other_angle(angle):
         return other_angle(angle)
 
 
-def set_trials(n_reps=10, angles=[0, 90, 135], n_trials=None, shuff=True):
+def set_trials(
+    n_reps=10,
+    angles=[0, 90, 135],
+    n_trials=None,
+    shuff=True,
+    comod=False,
+    n_angles=None,
+):
     """creates vector of all motion directions"""
     all_trials = []
     assert not (
         (angles is None) and (n_trials is None)
     ), "Provide angles or n_trials for random draw"
 
+    assert not (comod and (n_angles is None)), "Provide n_angle for comod version"
+
     if angles is None:
         angles = np.random.randint(0, 360, n_trials)
 
-    other_angles = map(other_angle, angles)
+    if not comod:
+        other_angles = map(other_angle, angles)
 
-    for subset_angle, global_angle in zip(angles, other_angles):
+        for subset_angle, global_angle in zip(angles, other_angles):
 
-        all_trials.append([[global_angle, subset_angle] for _ in range(n_reps)])
+            all_trials.append([[global_angle, subset_angle] for _ in range(n_reps)])
 
-    all_trials = np.concatenate(all_trials, axis=0)
+        all_trials = np.concatenate(all_trials, axis=0)
+
+    else:
+        spaced_out_angles = np.linspace(0, 360, n_angles, endpoint=False)
+        all_trials = np.stack([spaced_out_angles + a for a in angles])
+
     if shuff:
         idxs = np.arange(len(all_trials))
         random.shuffle(idxs)
@@ -146,6 +161,7 @@ class Experiment(object):
 
         self.angles = []
         self.results = []
+        self.d_times = []
         self.coherences = []
         self.subset_ratio = []
 
@@ -197,6 +213,8 @@ class Experiment(object):
             n_reps=params.DOT_REPETITIONS,
             angles=params.DOT_ANGLES,
             n_trials=params.N_TRIALS_PER_BATCH,
+            comod=params.COMOD,
+            n_angles=params.N_ANGLES,
         )
 
         self.trial_seq = TrialSequence(self.display, params)
@@ -210,6 +228,7 @@ class Experiment(object):
 
             self.results.append([chosen_angle])
             self.angles.append(angles)
+
             for angle in angles:
                 res = np.minimum(
                     np.abs(angle - chosen_angle),
@@ -217,7 +236,7 @@ class Experiment(object):
                 )
                 self.results[-1].append(res)
 
-            self.results[-1].append(decison_time)
+            self.d_times.append(decison_time)
             self.coherences.append(params.DOT_COHERENCE)
             self.subset_ratio.append(params.SUBSET_RATIO)
 
@@ -275,22 +294,22 @@ class Experiment(object):
             "subset_coherence": [],
             "subset_ratio": [],
             "chosen_angle": [],
-            "absolute_error_global": [],
+            # "absolute_error_global": [],
             "absolute_error_subset": [],
             "decision_time": [],
         }
-        for angles, (chosen_angle, error1, error2, d_time), (c1, c2), s_r in zip(
-            self.angles, self.results, self.coherences, self.subset_ratio
+        for angles, (chosen_angle, *errors), cohs, s_r, d_time in zip(
+            self.angles, self.results, self.coherences, self.subset_ratio, self.d_times
         ):
 
-            result_dict["global_direction"].append(angles[0])
-            result_dict["subset_direction"].append(angles[1])
+            # result_dict["global_direction"].append(angles[0])
+            result_dict["subset_direction"].append(angles[0])
             result_dict["chosen_angle"].append(chosen_angle)
-            result_dict["absolute_error_global"].append(error1)
-            result_dict["absolute_error_subset"].append(error2)
+            # result_dict["absolute_error_global"].append(error1)
+            result_dict["absolute_error_subset"].append(errors[0])
             result_dict["decision_time"].append(d_time)
-            result_dict["global_coherence"].append(c1)
-            result_dict["subset_coherence"].append(c2)
+            # result_dict["global_coherence"].append(c1)
+            result_dict["subset_coherence"].append(cohs[0])
             result_dict["subset_ratio"].append(s_r)
 
         results = pd.DataFrame.from_dict(result_dict)
@@ -316,6 +335,7 @@ class Experiment(object):
         resolution=100,
         smoothness=3,
         use_ratio=False,
+        normalize=False,
     ):
 
         values = self.results_pd[["subset_coherence", "subset_ratio", metric]].values.T
@@ -335,11 +355,16 @@ class Experiment(object):
 
         if type == "scipy":
             *_, (fig, ax), cbar = compute_and_plot_colormesh(
-                values, resolution=resolution
+                values, resolution=resolution, normalize_values=normalize
             )
         else:
             *_, (fig, ax), cbar = compute_and_plot_heatmap(
-                values, resolution=resolution, smoothness=smoothness, random=False
+                values,
+                resolution=resolution,
+                smoothness=smoothness,
+                random=False,
+                plot_f=False,
+                normalize_values=normalize,
             )
 
         ax.set_xlabel(x_label)
