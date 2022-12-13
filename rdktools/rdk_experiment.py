@@ -4,7 +4,7 @@
 import pygame
 from pygame.locals import *
 import pygame_gui
-import ptext
+import ptext.ptext as ptext
 
 
 from datetime import datetime

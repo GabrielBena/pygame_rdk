@@ -203,7 +203,8 @@ class RDK(object):
         self.rand = random.random()
         for i, dot in enumerate(self.dots):
             if dot.in_subset:
-                dot.move(self.rand)
+                dot.move()
+                # dot.move(self.rand)
             else:
                 dot.move()
 
@@ -233,7 +234,6 @@ class RDK(object):
                 motiondir=self.motiondirs[int(in_subset)],
                 dot_coherence=self.coherences[int(in_subset)],
                 in_subset=in_subset,
-                diffusion_scale=self.params.DIFFUSION_SCALE,
             )
             dots.add(dot)
             self.dot_motiondirs.append(dot.motiondir)
@@ -309,7 +309,6 @@ class RandDot(pygame.sprite.Sprite):
         dot_coherence,
         motiondir=180,
         in_subset=False,
-        diffusion_scale=False,
     ):
         super(RandDot, self).__init__()
 
@@ -340,7 +339,8 @@ class RandDot(pygame.sprite.Sprite):
             center=(self.x_0 + self.centre[0], self.y_0 + self.centre[1])
         )
         self.display = display
-        self.diffusion_scale = diffusion_scale
+        self.diffusion_scale = params.DIFFUSION_SCALE
+        self.params = params
 
         self.set_moves()
 
@@ -351,7 +351,7 @@ class RandDot(pygame.sprite.Sprite):
 
         if rand < self.coherence:
 
-            if not self.in_subset:
+            if not self.in_subset or self.params.DIFFUSE_SUBSET:
                 self.motiondir = (
                     np.random.normal(self.fixed_motiondir, self.diffusion_scale) % 360
                 )

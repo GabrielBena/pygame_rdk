@@ -42,7 +42,9 @@ class Params:
     DOT_COHERENCE: tuple = ((0.1, 0.2, 0.3, 0.4, 0.5), (0.5, 0.6, 0.7, 0.8, 0.9))
     SUBSET_RATIO: tuple = (0.01, 0.05, 0.1, 0.2, 0.3)
 
-    DIFFUSED_DIRECTION: bool = False
+    # Diffusion angle parameter
+    DIFFUSED_SCALE: int = 0
+    DIFFUSE_SUBSET: bool = False
 
     # aperture parameters
     APERTURE_WIDTH: int = 4  # line width in pixels
