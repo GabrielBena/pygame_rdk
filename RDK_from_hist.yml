@@ -1,0 +1,19 @@
+name: RDK
+channels:
+  - defaults
+dependencies:
+  - numpy
+  - python=3.10
+  - jupyter
+  - notebook
+  - ipywidgets
+  - matplotlib
+  - libstdcxx-ng
+  - pandas
+  - yaml
+  - pyyaml
+  - pyaml
+  - seaborn
+  - scipy
+  - black
+prefix: /home/gbena/anaconda3/envs/RDK
