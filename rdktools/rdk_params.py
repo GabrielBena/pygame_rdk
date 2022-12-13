@@ -29,8 +29,8 @@ class Params:
     DOT_ANGLES: None = None
     N_TRIALS_PER_BATCH: int = 5
     N_BATCH: int = 5
-    # : int DOT_ANGLES = list(np.arange(-180, 180, 10))  # motion directions
     DOT_REPETITIONS: int = 1  # how many repetitions of same trials?
+    # : int DOT_ANGLES = list(np.arange(-180, 180, 10))  # motion directions
 
     # DOT_COHERENCE = [0.3]  # motion coherence of all dots except subset (between 0 and 1)
     # DOT_COHERENCE.append(1 - 2 * DOT_COHERENCE[0])
@@ -41,6 +41,10 @@ class Params:
 
     DOT_COHERENCE: tuple = ((0.1, 0.2, 0.3, 0.4, 0.5), (0.5, 0.6, 0.7, 0.8, 0.9))
     SUBSET_RATIO: tuple = (0.01, 0.05, 0.1, 0.2, 0.3)
+    TEMPORALLY_COHERENT: bool = True
+
+    COMOD: bool = False
+    N_ANGLES: int = 2
 
     # Diffusion angle parameter
     DIFFUSION_SCALE: int = 0

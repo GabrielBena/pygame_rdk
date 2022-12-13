@@ -115,39 +115,30 @@ class RDK(object):
         params,
         motiondirs=(180, 0),
     ):
-        win_width = params.WINDOW_WIDTH
-        win_height = params.WINDOW_HEIGHT
-        n_dots = params.N_DOTS
-        win_colour = params.WINDOW_COLOUR
-        dot_colour = params.DOT_COLOR
-        dot_size = params.DOT_SIZE
-        dot_speed = params.DOT_SPEED
-        duration = params.TIME_RDK
-        dot_coherence = params.DOT_COHERENCE
-        subset_ratio = params.SUBSET_RATIO
-        aperture_radius = params.APERTURE_RADIUS
-        radius = random.randint(0, params.APERTURE_RADIUS)
-        tick_rate = params.TICK_RATE
 
         self.display = display
-        self.win_width = win_width
-        self.win_height = win_height
-        self.win_colour = win_colour
-        self.centre = [win_width // 2, win_height // 2]
-        self.aperture_radius = aperture_radius
-        self.ndots = n_dots
-        self.dot_size = dot_size
-        self.duration_init = duration
-        self.duration = duration
-        self.angle = random.randint(0, 360)
-        self.radius = radius
-        self.max_radius = self.aperture_radius - self.dot_size
-        self.dot_speed = dot_speed
-        self.dot_colour = dot_colour
-        self.tick_rate = tick_rate
+        self.win_width = params.WINDOW_WIDTH
+        self.win_height = params.WINDOW_HEIGHT
+        self.win_colour = params.WINDOW_COLOUR
+        self.centre = [self.win_width // 2, self.win_height // 2]
+        self.aperture_radius = params.APERTURE_RADIUS
 
-        self.coherences = dot_coherence
-        self.subset_ratio = subset_ratio
+        self.ndots = params.N_DOTS
+        self.dot_size = params.DOT_SIZE
+        self.dot_colour = params.DOT_COLOR
+        self.dot_speed = params.DOT_SPEED
+
+        self.duration_init = params.TIME_RDK
+        self.duration = params.TIME_RDK
+
+        self.angle = random.randint(0, 360)
+        self.radius = random.randint(0, params.APERTURE_RADIUS)
+        self.max_radius = self.aperture_radius - self.dot_size
+
+        self.tick_rate = params.TICK_RATE
+
+        self.coherences = params.DOT_COHERENCE
+        self.subset_ratio = params.SUBSET_RATIO
 
         self.motiondirs = motiondirs
 
@@ -163,6 +154,10 @@ class RDK(object):
         # draws dots
         for dot in self.dots:
             dot.draw()
+
+    @property
+    def n_angles(self):
+        return len(self.motiondirs)
 
     def show(self):
         allframes = []  # np.zeros((self.duration, self.win_width, self.win_height))
@@ -203,8 +198,10 @@ class RDK(object):
         self.rand = random.random()
         for i, dot in enumerate(self.dots):
             if dot.in_subset:
-                dot.move()
-                # dot.move(self.rand)
+                if self.params.TEMPORALLY_COHERENT:
+                    dot.move(self.rand)
+                else:
+                    dot.move()
             else:
                 dot.move()
 
@@ -225,15 +222,17 @@ class RDK(object):
         radii = np.random.choice(max_radius, ndots, p=weights)
         dots = pygame.sprite.Group()
         for ii in range(ndots):
-            in_subset = random.random() < self.subset_ratio
+            # in_subset = random.random() < self.subset_ratio
+            dot_group = np.random.randint(0, self.n_angles)
+
             dot = RandDot(
                 self.display,
                 self.params,
                 self.centre,
                 radius=radii[ii],
-                motiondir=self.motiondirs[int(in_subset)],
-                dot_coherence=self.coherences[int(in_subset)],
-                in_subset=in_subset,
+                motiondir=self.motiondirs[dot_group],
+                dot_coherence=self.coherences[dot_group],
+                in_subset=dot_group == 0,
             )
             dots.add(dot)
             self.dot_motiondirs.append(dot.motiondir)
@@ -309,10 +308,12 @@ class RandDot(pygame.sprite.Sprite):
         dot_coherence,
         motiondir=180,
         in_subset=False,
+        dot_colour=None,
     ):
         super(RandDot, self).__init__()
 
-        dot_colour = params.DOT_COLOR
+        if dot_colour is None:
+            dot_colour = params.DOT_COLOR
         dot_size = params.DOT_SIZE
         dot_speed = params.DOT_SPEED
         aperture_radius = params.APERTURE_RADIUS
