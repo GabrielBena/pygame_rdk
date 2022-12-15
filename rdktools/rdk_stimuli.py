@@ -12,7 +12,7 @@ import time
 
 # from array2gif import write_gif
 
-from rdktools.rdk_params import Params
+from rdktools.rdk_params import get_random_colors
 from rdktools.rdk_helper import polar2cartesian, cartesian2polar, get_mouse_angle
 
 
@@ -125,7 +125,12 @@ class RDK(object):
 
         self.ndots = params.N_DOTS
         self.dot_size = params.DOT_SIZE
-        self.dot_colour = params.DOT_COLOR
+
+        if params.COLOR_GROUPS:
+            self.dot_colour = get_random_colors(params.N_ANGLES)
+        else:
+            self.dot_colour = params.DOT_COLOR
+
         self.dot_speed = params.DOT_SPEED
 
         self.duration_init = params.TIME_RDK
@@ -221,6 +226,10 @@ class RDK(object):
         weights = np.arange(max_radius) / sum(np.arange(max_radius))
         radii = np.random.choice(max_radius, ndots, p=weights)
         dots = pygame.sprite.Group()
+
+        if self.params.COLOR_GROUPS:
+            np.random.shuffle(self.dot_colour)
+
         for ii in range(ndots):
             # in_subset = random.random() < self.subset_ratio
             dot_group = np.random.randint(0, self.n_angles)
@@ -233,6 +242,9 @@ class RDK(object):
                 motiondir=self.motiondirs[dot_group],
                 dot_coherence=self.coherences[dot_group],
                 in_subset=dot_group == 0,
+                dot_colour=self.dot_colour
+                if not self.params.COLOR_GROUPS
+                else self.dot_colour[dot_group],
             )
             dots.add(dot)
             self.dot_motiondirs.append(dot.motiondir)

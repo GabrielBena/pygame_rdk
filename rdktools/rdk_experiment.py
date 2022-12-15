@@ -23,7 +23,7 @@ import matplotlib.pyplot
 from copy import deepcopy
 
 from rdktools.rdk_stimuli import RDK, Fixation, BlankScreen, ResultPrompt
-from rdktools.rdk_params import Params, get_random_params
+from rdktools.rdk_params import Params, get_random_params, get_random_colors
 from heatmap.plot import compute_and_plot_heatmap, compute_and_plot_colormesh
 
 
@@ -66,6 +66,15 @@ def set_trials(
     else:
         spaced_out_angles = np.linspace(0, 360, n_angles, endpoint=False)
         all_trials = np.stack([spaced_out_angles + a for a in angles])
+        print(all_trials)
+        """
+        all_trials = np.stack(
+            [
+                np.random.choice(spaced_out_angles, n_angles, replace=False) + a
+                for a in angles
+            ]
+        )
+        """
 
     if shuff:
         idxs = np.arange(len(all_trials))
@@ -288,9 +297,9 @@ class Experiment(object):
         self.results = np.array(self.results)
 
         result_dict = {
-            "global_direction": [],
+            # "global_direction": [],
             "subset_direction": [],
-            "global_coherence": [],
+            # "global_coherence": [],
             "subset_coherence": [],
             "subset_ratio": [],
             "chosen_angle": [],
@@ -382,3 +391,10 @@ class Experiment(object):
         self.results_pd = pd.read_csv(path + "/results.csv")
         self.results = self.results_pd.values
         self.save_path = path
+
+
+if __name__ == "__main__":
+
+    params = Params(N_TRIALS_PER_BATCH=3, N_BATCH=2)
+    exp = Experiment(params, None, save_data=False, save_gif=False, randomize=True)
+    exp.run()

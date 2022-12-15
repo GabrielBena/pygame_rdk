@@ -1,5 +1,6 @@
 import numpy as np
 from dataclasses import dataclass
+from matplotlib import colormaps
 
 
 @dataclass(repr=True)
@@ -21,9 +22,12 @@ class Params:
     TIME_ITI: int = 10
 
     # dot parameters
-    N_DOTS: int = (
-        int(np.pi * APERTURE_RADIUS**2) // 250
+
+    DENSITY: float = 1 / 1000
+    N_DOTS: int = int(
+        np.pi * APERTURE_RADIUS**2 * DENSITY
     )  # max num of simultaneously displayed dots
+    print(N_DOTS)
     DOT_SIZE: int = 3  # size in pixels
     DOT_SPEED: int = 4  # speed in pixels per frame
     DOT_ANGLES: None = None
@@ -66,6 +70,7 @@ class Params:
     WINDOW_COLOUR: tuple = COL_BLACK
     APERTURE_COLOR: tuple = COL_WHITE
     FIX_COLOR: tuple = COL_WHITE
+    COLOR_GROUPS: bool = False
 
 
 def get_random_params(params):
@@ -94,3 +99,12 @@ def get_random_params(params):
         subset_ratio = r * s
 
     return coherences, subset_ratio
+
+
+def get_random_colors(n_angles):
+    c_scale = colormaps["GnBu"]
+    colors = (
+        np.array([c_scale(i)[:-1] for i in np.linspace(0, 255, n_angles, dtype=int)])
+        * 255
+    )
+    return colors
