@@ -123,7 +123,7 @@ class RDK(object):
         self.centre = [self.win_width // 2, self.win_height // 2]
         self.aperture_radius = params.APERTURE_RADIUS
 
-        self.ndots = params.N_DOTS
+        self.ndots = int(np.pi * params.APERTURE_RADIUS**2 * params.DENSITY)
         self.dot_size = params.DOT_SIZE
 
         if params.COLOR_GROUPS:
@@ -142,16 +142,37 @@ class RDK(object):
 
         self.tick_rate = params.TICK_RATE
 
-        self.coherences = params.DOT_COHERENCE
-        self.subset_ratio = params.SUBSET_RATIO
+        # self.background_coherence = params.BACK_COHERENCE
+        self.subset_coherences = list(params.SPATIAL_COHERENCES)
+        self.subset_fractions = list(params.SUBSET_FRACTIONS)
+        self.subset_motiondirs = list(motiondirs)
+        self.subset_temp_coherences = list(params.TEMPORAL_COHERENCES)
 
-        self.motiondirs = motiondirs
+        # assert all same lengths
+        assert (
+            len(
+                np.unique(
+                    [
+                        len(l)
+                        for l in [
+                            self.subset_coherences,
+                            self.subset_fractions,
+                            self.subset_motiondirs,
+                            self.subset_temp_coherences,
+                        ]
+                    ]
+                )
+            )
+            == 1
+        ), "Provide same lenghts for coherences, ratios and motiondirs"
+
+        assert np.sum(self.subset_fractions) <= 1, "ratios must sum under 1"
 
         self.params = params
         self.dot_motiondirs = []
 
         self.dots = pygame.sprite.Group()
-        self.dots = self.sample_dots(self.max_radius, self.ndots)
+        self.sample_dots(self.max_radius, self.ndots)
         self.clock = pygame.time.Clock()
         self.fix = Fixation(self.display, params)
 
@@ -159,6 +180,22 @@ class RDK(object):
         # draws dots
         for dot in self.dots:
             dot.draw()
+
+    @property
+    def fractions(self):
+        return [1 - np.sum(self.subset_fractions)] + list(self.subset_fractions)
+
+    @property
+    def spatial_coherences(self):
+        return [0.0] + list(self.subset_coherences)
+
+    @property
+    def temporal_coherences(self):
+        return [0.0] + list(self.subset_temp_coherences)
+
+    @property
+    def motiondirs(self):
+        return [None] + list(self.subset_motiondirs)
 
     @property
     def n_angles(self):
@@ -200,13 +237,10 @@ class RDK(object):
     def update(self):
         # updates position of dots
         self.dot_motiondirs = []
-        self.rand = random.random()
+        self.rand = [random.random() for _ in self.fractions]
         for i, dot in enumerate(self.dots):
-            if dot.in_subset:
-                if self.params.TEMPORALLY_COHERENT:
-                    dot.move(self.rand)
-                else:
-                    dot.move()
+            if random.random() < self.temporal_coherences[dot.group]:
+                dot.move(self.rand[dot.group])
             else:
                 dot.move()
 
@@ -217,8 +251,8 @@ class RDK(object):
         pygame.display.update()
 
     def new_sample(self, angles):
-        self.motiondirs = angles
-        self.dots = self.sample_dots(self.max_radius, self.ndots)
+        self.subset_motiondirs = angles
+        self.sample_dots(self.max_radius, self.ndots)
 
     def sample_dots(self, max_radius, ndots):
         # use weighted sampling distribution to avoid
@@ -230,26 +264,28 @@ class RDK(object):
         if self.params.COLOR_GROUPS:
             np.random.shuffle(self.dot_colour)
 
-        for ii in range(ndots):
-            # in_subset = random.random() < self.subset_ratio
-            dot_group = np.random.randint(0, self.n_angles)
+        self.dots_groups = [
+            np.random.multinomial(1, self.fractions).argmax() for _ in range(ndots)
+        ]
+        # print(np.unique(self.dots_groups, return_counts=True))
 
-            dot = RandDot(
+        self.dots = [
+            RandDot(
                 self.display,
                 self.params,
                 self.centre,
                 radius=radii[ii],
-                motiondir=self.motiondirs[dot_group],
-                dot_coherence=self.coherences[dot_group],
-                in_subset=dot_group == 0,
+                motiondir=self.motiondirs[group],
+                dot_coherence=self.spatial_coherences[group],
+                group=group,
+                temp_coherence=self.temporal_coherences[group],
                 dot_colour=self.dot_colour
                 if not self.params.COLOR_GROUPS
-                else self.dot_colour[dot_group],
+                else self.dot_colour[group],
             )
-            dots.add(dot)
-            self.dot_motiondirs.append(dot.motiondir)
-
-        return dots
+            for ii, group in enumerate(self.dots_groups)
+        ]
+        self.dot_motiondirs = [d.motiondir for d in self.dots]
 
     def collect_frame(self):
         string_image = pygame.image.tostring(self.display, "RGB")
@@ -319,7 +355,8 @@ class RandDot(pygame.sprite.Sprite):
         radius,
         dot_coherence,
         motiondir=180,
-        in_subset=False,
+        group=0,
+        temp_coherence=False,
         dot_colour=None,
     ):
         super(RandDot, self).__init__()
@@ -332,6 +369,11 @@ class RandDot(pygame.sprite.Sprite):
 
         self.dot_size = dot_size
         self.dot_colour = dot_colour
+
+        self.group = group
+        self.in_subset = group != 0
+        self.temp_coherent = temp_coherence
+
         # self.dot_colour = (
         #    params.COL_BLUE
         #    if in_subset
@@ -346,7 +388,7 @@ class RandDot(pygame.sprite.Sprite):
         self.dot_speed = dot_speed
         self.coherence = dot_coherence
         self.fixed_motiondir = motiondir
-        self.in_subset = in_subset
+        # self.in_subset = in_subset
         self.x_0, self.y_0 = polar2cartesian(self.angle, self.radius)
         self.rect = self.surf.get_rect(
             center=(self.x_0 + self.centre[0], self.y_0 + self.centre[1])

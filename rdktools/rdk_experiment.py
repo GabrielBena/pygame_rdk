@@ -66,7 +66,6 @@ def set_trials(
     else:
         spaced_out_angles = np.linspace(0, 360, n_angles, endpoint=False)
         all_trials = np.stack([spaced_out_angles + a for a in angles])
-        print(all_trials)
         """
         all_trials = np.stack(
             [
@@ -127,7 +126,7 @@ class Experiment(object):
         params,
         path=None,
         randomize=True,
-        save_gif=True,
+        save_gif=False,
         save_data=True,
     ) -> None:
 
@@ -168,11 +167,17 @@ class Experiment(object):
         self.save_data = save_data
         self.randomize = randomize
 
-        self.angles = []
-        self.results = []
-        self.d_times = []
-        self.coherences = []
-        self.subset_ratio = []
+        self.results = {
+            k: []
+            for k in [
+                "angles",
+                "coherences",
+                "temp_coherences",
+                "subset_fractions",
+                "chosen_angles",
+                "decision_times",
+            ]
+        }
 
         win_width = self.params.WINDOW_WIDTH
         win_height = self.params.WINDOW_HEIGHT
@@ -235,19 +240,12 @@ class Experiment(object):
                 if frames == "exit":
                     return "exit"
 
-            self.results.append([chosen_angle])
-            self.angles.append(angles)
-
-            for angle in angles:
-                res = np.minimum(
-                    np.abs(angle - chosen_angle),
-                    np.abs(angle - 360 - chosen_angle) % 180,
-                )
-                self.results[-1].append(res)
-
-            self.d_times.append(decison_time)
-            self.coherences.append(params.DOT_COHERENCE)
-            self.subset_ratio.append(params.SUBSET_RATIO)
+            self.results["chosen_angles"].append(chosen_angle)
+            self.results["angles"].append(angles)
+            self.results["decision_times"].append(decison_time)
+            self.results["coherences"].append(params.SPATIAL_COHERENCES)
+            self.results["temp_coherences"].append(params.TEMPORAL_COHERENCES)
+            self.results["subset_fractions"].append(params.SUBSET_FRACTIONS)
 
             imgs = [Image.fromarray(f.T * 255) for f in frames]
             if self.save_gif:
@@ -293,35 +291,17 @@ class Experiment(object):
 
     def save_results(self):
 
-        self.angles = np.array(self.angles)
-        self.results = np.array(self.results)
+        self.results = {k: np.array(r) for k, r in self.results.items()}
 
-        result_dict = {
-            # "global_direction": [],
-            "subset_direction": [],
-            # "global_coherence": [],
-            "subset_coherence": [],
-            "subset_ratio": [],
-            "chosen_angle": [],
-            # "absolute_error_global": [],
-            "absolute_error_subset": [],
-            "decision_time": [],
-        }
-        for angles, (chosen_angle, *errors), cohs, s_r, d_time in zip(
-            self.angles, self.results, self.coherences, self.subset_ratio, self.d_times
-        ):
+        self.final_results = {}
+        for k, res in self.results.items():
+            if len(res.shape) == 1:
+                self.final_results[k] = res
+            else:
+                for group, r in enumerate(res.T):
+                    self.final_results[f"{k}_{group}"] = r
 
-            # result_dict["global_direction"].append(angles[0])
-            result_dict["subset_direction"].append(angles[0])
-            result_dict["chosen_angle"].append(chosen_angle)
-            # result_dict["absolute_error_global"].append(error1)
-            result_dict["absolute_error_subset"].append(errors[0])
-            result_dict["decision_time"].append(d_time)
-            # result_dict["global_coherence"].append(c1)
-            result_dict["subset_coherence"].append(cohs[0])
-            result_dict["subset_ratio"].append(s_r)
-
-        results = pd.DataFrame.from_dict(result_dict)
+        results = pd.DataFrame.from_dict(self.final_results)
 
         try:
             existing_results = pd.read_csv(f"{self.save_path}/results.csv", index_col=0)
@@ -332,10 +312,7 @@ class Experiment(object):
         self.results_pd = results
         results.to_csv(f"{self.save_path}/results.csv")
 
-        self.angles = []
-        self.results = []
-        self.coherences = []
-        self.subset_ratio = []
+        self.results = {k: [] for k in self.results.keys()}
 
     def plot_results(
         self,

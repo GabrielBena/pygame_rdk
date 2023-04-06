@@ -23,11 +23,8 @@ class Params:
 
     # dot parameters
 
-    DENSITY: float = 1 / 1000
-    N_DOTS: int = int(
-        np.pi * APERTURE_RADIUS**2 * DENSITY
-    )  # max num of simultaneously displayed dots
-    print(N_DOTS)
+    DENSITY: float = 1 / 750
+
     DOT_SIZE: int = 3  # size in pixels
     DOT_SPEED: int = 4  # speed in pixels per frame
     DOT_ANGLES: None = None
@@ -43,12 +40,15 @@ class Params:
     # DOT_COHERENCE: tuple = ((0.1, 0.5), (0.5, 0.9))  # coherences or range of coherences
     # SUBSET_RATIO: float = (0.01, 0.3)  # ratio or range of ratio
 
-    DOT_COHERENCE: tuple = ((0.1, 0.2, 0.3, 0.4, 0.5), (0.5, 0.6, 0.7, 0.8, 0.9))
-    SUBSET_RATIO: tuple = (0.01, 0.05, 0.1, 0.2, 0.3)
-    TEMPORALLY_COHERENT: bool = True
+    # DOT_COHERENCE: tuple = ((0.1, 0.2, 0.3, 0.4, 0.5), (0.5, 0.6, 0.7, 0.8, 0.9))
+    # SUBSET_RATIO: tuple = (0.01, 0.05, 0.1, 0.2, 0.3)
+
+    SPATIAL_COHERENCES: tuple = (0.1, 0.5)
+    SUBSET_FRACTIONS: tuple = (0.5, 0.1)  # ratio of dots in each subset
+    TEMPORAL_COHERENCES: tuple = (0.1, 0.9)
+    N_ANGLES: int = 2
 
     COMOD: bool = False
-    N_ANGLES: int = 2
 
     # Diffusion angle parameter
     DIFFUSION_SCALE: int = 0
